@@ -420,70 +420,74 @@ if pb_path.exists():
 fig, ax = plt.subplots(figsize=(11, 6.5))
 x = list(range(len(DOSE_LEVELS)))
 
-# ── SART fan-beam (solid green, thick) ───────────────────────────────────────
-y_sart_fan = [ssim_lu[("SART", d)][0] for d in DOSE_LEVELS]
-sd_sart_fan= [ssim_lu[("SART", d)][1] for d in DOSE_LEVELS]
-ax.plot(x, y_sart_fan, color=ALGO_COLORS["SART"], lw=3.0,
+# ── Fan-beam lines (solid) — all three algorithms ─────────────────────────────
+
+# FBP / ramp (fan-beam) — solid red
+y_ramp_fan  = [ssim_lu[("FBP_ramp", d)][0] for d in DOSE_LEVELS]
+sd_ramp_fan = [ssim_lu[("FBP_ramp", d)][1] for d in DOSE_LEVELS]
+ax.plot(x, y_ramp_fan, color=ALGO_COLORS["FBP_ramp"], lw=2.2,
+        marker="o", ms=6, linestyle="-",
+        label="FBP / ramp (fan-beam)")
+ax.fill_between(x,
+                [yi-si for yi,si in zip(y_ramp_fan, sd_ramp_fan)],
+                [yi+si for yi,si in zip(y_ramp_fan, sd_ramp_fan)],
+                color=ALGO_COLORS["FBP_ramp"], alpha=0.12)
+
+# FBP / cosine (fan-beam) — solid blue
+y_cos_fan  = [ssim_lu[("FBP_cos", d)][0] for d in DOSE_LEVELS]
+sd_cos_fan = [ssim_lu[("FBP_cos", d)][1] for d in DOSE_LEVELS]
+ax.plot(x, y_cos_fan, color=ALGO_COLORS["FBP_cos"], lw=2.2,
+        marker="o", ms=6, linestyle="-",
+        label="FBP / cosine (fan-beam)")
+ax.fill_between(x,
+                [yi-si for yi,si in zip(y_cos_fan, sd_cos_fan)],
+                [yi+si for yi,si in zip(y_cos_fan, sd_cos_fan)],
+                color=ALGO_COLORS["FBP_cos"], alpha=0.12)
+
+# SART (fan-beam) — solid green, thick
+y_sart_fan  = [ssim_lu[("SART", d)][0] for d in DOSE_LEVELS]
+sd_sart_fan = [ssim_lu[("SART", d)][1] for d in DOSE_LEVELS]
+ax.plot(x, y_sart_fan, color=ALGO_COLORS["SART"], lw=2.8,
         marker="o", ms=7, linestyle="-",
-        label="SART — fan-beam (this module)")
+        label="SART (fan-beam)")
 ax.fill_between(x,
                 [yi-si for yi,si in zip(y_sart_fan, sd_sart_fan)],
                 [yi+si for yi,si in zip(y_sart_fan, sd_sart_fan)],
-                color=ALGO_COLORS["SART"], alpha=0.15)
+                color=ALGO_COLORS["SART"], alpha=0.12)
 
-# ── SART parallel-beam (dashed green) ────────────────────────────────────────
-if ("SART", 100) in pb_lu:
-    y_sart_pb = [pb_lu.get(("SART", d), np.nan) for d in DOSE_LEVELS]
-    ax.plot(x, y_sart_pb, color=ALGO_COLORS["SART"], lw=2.0,
-            marker="s", ms=6, linestyle="--", alpha=0.65,
-            label="SART — parallel-beam (modules 01–07)")
+# ── Parallel-beam lines (dashed) — FBP/cosine and SART as reference ──────────
 
-# ── FBP/cosine parallel-beam (dashed blue — analytic baseline) ───────────────
+# FBP/cosine parallel-beam — dashed blue, lighter
 if ("FBP_cos", 100) in pb_lu:
     y_fbp_pb = [pb_lu.get(("FBP_cos", d), np.nan) for d in DOSE_LEVELS]
-    ax.plot(x, y_fbp_pb, color=ALGO_COLORS["FBP_cos"], lw=2.0,
-            marker="s", ms=6, linestyle="--", alpha=0.65,
-            label="FBP/cosine — parallel-beam (best analytic filter, modules 01–07)")
+    ax.plot(x, y_fbp_pb, color=ALGO_COLORS["FBP_cos"], lw=1.8,
+            marker="s", ms=6, linestyle="--", alpha=0.55,
+            label="FBP/cosine (parallel-beam)")
 
-# ── Delta annotations: fan-beam SART vs fan-beam FBP/cosine ─────────────────
-# These show the SART advantage within fan-beam geometry (the primary finding).
-for dose_idx, dose in [(0, 100), (4, 10)]:
-    sart_v = ssim_lu[("SART",    dose)][0]
-    fbp_v  = ssim_lu[("FBP_cos", dose)][0]
-    delta  = sart_v - fbp_v
-    mid    = (sart_v + fbp_v) / 2
-    ax.annotate(
-        f"Δ={delta:.2f}\n(fan-beam SART\nvs fan FBP/cos)",
-        xy=(dose_idx, mid),
-        xytext=(dose_idx + 0.25, mid),
-        fontsize=7.5, color="#1D5C2A",
-        va="center",
-        arrowprops=dict(arrowstyle="-", color="#1D5C2A", lw=0.8)
-    )
+# SART parallel-beam — dashed green, lighter
+if ("SART", 100) in pb_lu:
+    y_sart_pb = [pb_lu.get(("SART", d), np.nan) for d in DOSE_LEVELS]
+    ax.plot(x, y_sart_pb, color=ALGO_COLORS["SART"], lw=1.8,
+            marker="s", ms=6, linestyle="--", alpha=0.55,
+            label="SART (parallel-beam)")
 
 # ── Perceptual threshold ──────────────────────────────────────────────────────
-ax.axhline(0.02, color="grey", lw=0.8, linestyle=":",
-           label="Δ = 0.02 (perceptual threshold, Wang et al. 2004)")
+ax.axhline(0.02, color="grey", lw=0.9, linestyle=":",
+           label="\u0394=0.02 (perceptual threshold)")
 
+# ── Axes and labels ───────────────────────────────────────────────────────────
 ax.set_xticks(x)
 ax.set_xticklabels([f"{d}%" for d in DOSE_LEVELS], fontsize=11)
 ax.set_xlabel("Simulated dose level (%)", fontsize=12)
-ax.set_ylabel("SSIM vs noise-free phantom (mean ± SD,  n = 5)", fontsize=12)
+ax.set_ylabel("SSIM (mean \u00b1 SD, n = 5)", fontsize=12)
 ax.set_ylim(0, 1.0)
 ax.set_title(
-    "SART under fan-beam geometry confirms the parallel-beam ranking\n"
-    "SART (fan-beam, solid) outperforms FBP/cosine (fan-beam) at every dose level  "
-    "—  Δ = 0.31 at full dose  —  D* = 100%",
-    fontsize=11, fontweight="bold")
-ax.legend(fontsize=9.5, loc="upper right", framealpha=0.9)
-ax.grid(True, alpha=0.25)
-
-# Annotate geometry note
-ax.text(0.01, 0.03,
-        "FBP fan-beam lines omitted: rebinning interpolation\n"
-        "lowers SSIM independently of reconstruction quality.",
-        transform=ax.transAxes, fontsize=7.5,
-        color="grey", va="bottom", style="italic")
+    "Fan-beam vs parallel-beam reconstruction: SSIM across dose levels\n"
+    "(solid lines = fan-beam;  dashed lines = parallel-beam)",
+    fontsize=12, fontweight="bold")
+ax.legend(fontsize=9.5, loc="upper right", framealpha=0.92,
+          edgecolor="none")
+ax.grid(True, axis="y", alpha=0.25)
 
 plt.tight_layout()
 fig_path = FIGURES_DIR / "figure_fanbeam_ssim_comparison.png"

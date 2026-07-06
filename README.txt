@@ -1,14 +1,14 @@
 ================================================================================
   Filter selection versus iterative reconstruction in CT:
-  a noise-dose benchmark using open-source Python and clinical DICOM validation
+  an open-source Python benchmark of noise-dose trade-offs with
+  illustrative clinical DICOM examples
 ================================================================================
 
   Dr. Arijit Roy
-  ORCiD: https://orcid.org/0000-0002-9618-6641
+  ORCiD: <https://orcid.org/0000-0002-9618-6641>
   email: arijitroy@live.com
 
-
-  GitHub repository: https://github.com/code-depository/CT-Reconstruction-Benchmark
+  GitHub repository: <https://github.com/code-depository/CT-Reconstruction-Benchmark>
 
 ────────────────────────────────────────────────────────────────────────────────
  OVERVIEW
@@ -22,29 +22,45 @@ simulated dose levels in three experimental arms:
            Five algorithms (IRT, FBP/ramp, FBP/Shepp-Logan, FBP/cosine, SART)
            evaluated on a 400×400 Shepp-Logan phantom at dose levels
            100%, 75%, 50%, 25%, 10%, and 1%, with five independent Poisson
-           noise realisations per cell (150 reconstructions total).
+           noise realisations per cell (150 reconstructions total). SSIM,
+           PSNR, and MSE are computed for every reconstruction.
 
-  Arm 2 — Clinical DICOM validation
+  Arm 2 — Illustrative application to clinical DICOM images
            Two axial brain CT slices from the Kaggle Brain Stroke CT Dataset:
            a normal brain case (12155.dcm) and an intracerebral haemorrhage
-           (ICH) case (10331.dcm). HU accuracy validated across four tissue
-           ROIs per case (32/32 checks passed).
+           (ICH) case (10331.dcm). These are re-projected and reconstructed
+           (not raw projection data), so this arm illustrates pipeline
+           applicability rather than providing clinical validation. HU
+           accuracy assessed across four tissue ROIs per case (32/32 checks
+           passed).
 
   Arm 3 — Fan-beam geometry benchmark
            SART repeated under fan-flat geometry using ASTRA Toolbox 2.4.1
            (SID = 570 px, SDD = 1040 px, 736 detectors, 360 angles).
-           Confirms that SART superiority and D* = 100% are geometry-independent.
+           Confirms that the SART superiority finding on SSIM is consistent
+           across parallel-beam and fan-beam geometry. PSNR and MSE were
+           NOT computed for this arm; it is not yet known whether the
+           PSNR/MSE crossover identified in Arm 1 also holds under fan-beam
+           geometry (see manuscript Section 5.5, Limitations).
 
 KEY FINDINGS
   - FBP/cosine outperforms FBP/Shepp-Logan on SSIM at all six dose levels
     (0.761 vs 0.580 at full dose). This contradicts the conventional default.
-  - SART outperforms FBP/cosine at every dose level tested (Δ-SSIM = 0.134
-    at full dose, widening to 0.419 at 10% dose). D* = 100%.
-  - Finding confirmed under fan-beam geometry (Δ-SSIM = 0.309 at full dose).
-  - Fan-beam SART at 25% dose (SSIM = 0.543) exceeds FBP/cosine at 25% dose
-    (SSIM = 0.448): quantitative basis for dose reduction without quality loss.
+    This ranking is NOT consistent on PSNR: FBP/ramp or FBP/Shepp-Logan
+    achieve higher PSNR than FBP/cosine at full, 75%, and 50% dose (Table 2b).
+  - SART outperforms FBP/cosine on SSIM at every dose level tested (Δ-SSIM =
+    0.134 at full dose, widening to 0.419 at 10% dose). No SSIM-based
+    crossover dose threshold was identified across the tested range.
+  - On PSNR and MSE, however, the ranking is reversed at full-to-moderate
+    dose: FBP filters achieve higher PSNR / lower MSE than SART at 100-25%
+    dose, while SART only overtakes the best FBP filter at 10% and 1% dose
+    (Tables 2b, 2c). This indicates a genuine pixel-fidelity crossover
+    between 25% and 10% dose that is absent from the SSIM analysis, and
+    shows that the relative performance of SART vs FBP is metric-dependent.
+  - The SART-vs-FBP/cosine finding on SSIM is confirmed under fan-beam
+    geometry (Δ-SSIM = 0.309 at full dose). PSNR/MSE were not evaluated
+    for this arm (see Arm 3 note above).
   - 32/32 HU checks passed across normal brain and ICH clinical DICOM cases.
-
 
 ────────────────────────────────────────────────────────────────────────────────
  REPOSITORY STRUCTURE
@@ -56,9 +72,9 @@ KEY FINDINGS
   ├── 02_noise.py            Inject Poisson noise at six dose levels × five seeds
   ├── 03_reconstruct.py      Reconstruct with five algorithms (150 images)
   ├── 04_metrics.py          Compute SSIM / PSNR / MSE; identify D*
-  ├── 05_dicom.py            Two-case clinical DICOM validation (Arm 2)
+  ├── 05_dicom.py            Two-case illustrative DICOM application (Arm 2)
   ├── 06_figures.py          Generate Figures 1–3 at 300 DPI
-  ├── 07_tables.py           Generate Tables 1–3 as CSV and LaTeX
+  ├── 07_tables.py           Generate Tables 1, 2a, 2b, 2c, 3 as CSV and LaTeX
   ├── 08_fanbeam.py          Fan-beam benchmark using ASTRA Toolbox (Arm 3)
   │
   ├── data/                  Created by 01_phantom.py (phantom + sinograms)
@@ -66,7 +82,7 @@ KEY FINDINGS
   │
   ├── results/               Created by 03_reconstruct.py and 04_metrics.py
   │   ├── recons/            180 reconstruction .npy files + 5 clean ceilings
-  │   ├── dicom/             DICOM validation outputs (05_dicom.py)
+  │   ├── dicom/             DICOM application outputs (05_dicom.py)
   │   │   ├── normal/        Normal brain case outputs
   │   │   └── bleeding/      ICH case outputs
   │   └── fanbeam/           Fan-beam results (08_fanbeam.py)
@@ -75,7 +91,6 @@ KEY FINDINGS
   ├── tables/                All publication tables (CSV + LaTeX)
   │
   └── README.txt             This file
-
 
 ────────────────────────────────────────────────────────────────────────────────
  REQUIREMENTS
@@ -114,14 +129,13 @@ KEY FINDINGS
   Note: GPU (CUDA) is NOT required. All computations run on CPU.
   ASTRA GPU algorithms (FBP_CUDA) are not used in this pipeline.
 
-
 ────────────────────────────────────────────────────────────────────────────────
  QUICK START
 ────────────────────────────────────────────────────────────────────────────────
 
   Step 1 — Clone the repository
-      git clone https://github.com/[username]/ct-reconstruction-benchmark.git
-      cd ct-reconstruction-benchmark
+      git clone <https://github.com/code-depository/CT-Reconstruction-Benchmark.git>
+      cd CT-Reconstruction-Benchmark
 
   Step 2 — Install dependencies (see REQUIREMENTS above)
 
@@ -139,10 +153,9 @@ KEY FINDINGS
   appropriate subdirectory. Modules read only from subdirectories written
   by earlier modules, so sequential execution is all that is required.
 
-  To skip DICOM validation (Module 05), run modules 01–04 and 06–08.
+  To skip the DICOM application (Module 05), run modules 01–04 and 06–08.
   Modules 06 and 07 will skip Figure 3 and Table 3 gracefully if DICOM
   outputs are absent.
-
 
 ────────────────────────────────────────────────────────────────────────────────
  MODULE REFERENCE
@@ -182,9 +195,12 @@ KEY FINDINGS
     Computes SSIM (data_range=1.0), PSNR, and MSE against the ground-truth
     phantom for all 180 reconstructions. Aggregates mean ± SD across five seeds
     per (algorithm, dose) cell. Identifies D* as the lowest dose at which
-    SSIM(SART) − SSIM(FBP/cosine) > 0.02 and SD bands do not overlap.
+    SSIM(SART) − SSIM(FBP/cosine) > 0.02 and SD bands do not overlap. Under
+    the tested conditions, no dose satisfies this criterion in the direction
+    that would indicate a meaningful SSIM crossover (SART leads throughout).
     Outputs : results/metrics_raw.csv      (180 rows)
-              results/metrics_summary.csv   (30 rows: 5 algos × 6 doses)
+              results/metrics_summary.csv   (30 rows: 5 algos × 6 doses;
+                                              includes SSIM, PSNR, MSE)
               results/crossover.json        (D*, per-dose gap values)
               results/timing_table.csv
     Runtime : < 1 minute
@@ -202,19 +218,29 @@ KEY FINDINGS
   06_figures.py
     Produces Figures 1–3 for the manuscript at 300 DPI:
       Figure 1 — 5×6 reconstruction grid (algorithm × dose)
-      Figure 2 — SSIM vs dose line chart with ±SD bands and D* annotation
-      Figure 3 — Two-case DICOM validation panel (8 panels)
+      Figure 2 — SSIM vs dose line chart with ±SD bands
+      Figure 3 — Two-case DICOM application panel (8 panels)
     Outputs : figures/figure1_reconstruction_grid.png
               figures/figure2_ssim_vs_dose.png
-              figures/figure3_dicom_validation.png
+              figures/figure3_dicom_application.png
     Runtime : < 1 minute
+    Note: this module does not yet generate the SSIM/PSNR dose-crossover
+    figure referenced in manuscript Section 4.2; that figure is currently
+    produced separately from results/metrics_summary.csv.
 
   07_tables.py
-    Produces Tables 1–3 as both CSV and LaTeX:
-      Table 1 — SSIM matrix (5 algorithms × 6 dose levels, mean ± SD)
-      Table 2 — Full-dose comparison (SSIM, PSNR, SSIM ceiling, time)
-      Table 3 — HU validation (8 rows: 4 tissues × 2 cases)
-    Outputs : tables/table{1,2,3}_*.csv  and  tables/table{1,2,3}_*.tex
+    Produces Tables 1, 2a, 2b, 2c, and 3 as CSV and LaTeX:
+      Table 1  — SSIM matrix (5 algorithms × 6 dose levels, mean ± SD)
+      Table 2a — Full-dose comparison (SSIM, PSNR, SSIM ceiling, time)
+      Table 2b — PSNR (mean ± SD) across all six dose levels
+      Table 2c — MSE (mean ± SD) across all six dose levels
+      Table 3  — HU validation (8 rows: 4 tissues × 2 cases)
+    Outputs : tables/table1_ssim_matrix.csv        (+ .tex)
+              tables/table2_full_dose.csv           (+ .tex)   [Table 2a]
+              tables/table2_extended_all_doses.csv
+              tables/table2b_psnr_all_doses.tex
+              tables/table2c_mse_all_doses.tex
+              tables/table3_hu_validation.csv       (+ .tex)
     Runtime : < 10 seconds
 
   08_fanbeam.py
@@ -223,13 +249,13 @@ KEY FINDINGS
     Fan-beam SART uses ASTRA's native iterative algorithm (no geometric
     approximation). Fan-beam FBP uses fan-to-parallel rebinning followed by
     skimage iradon (CPU-compatible workaround; ASTRA FBP requires GPU).
-    Runs 3 algorithms × 6 doses × 5 seeds = 90 reconstructions.
+    Runs 3 algorithms × 6 doses × 5 seeds = 90 reconstructions. Computes
+    SSIM only; PSNR and MSE are not currently computed for this arm.
     Produces Figure 4 (fan-beam vs parallel-beam SSIM comparison).
     Outputs : results/fanbeam/  (metrics CSV, crossover JSON, recon .npy files)
               figures/figure_fanbeam_ssim_comparison.png
               figures/figure_fanbeam_recon_grid.png
     Runtime : ~3–4 minutes on CPU
-
 
 ────────────────────────────────────────────────────────────────────────────────
  DATA
@@ -241,7 +267,7 @@ KEY FINDINGS
   CLINICAL DICOM DATA (required for Module 05 only)
   Source  : Kaggle Brain Stroke CT Image Dataset
   Author  : Ozgur Aslan
-  URL     : https://www.kaggle.com/datasets/ozguraslank/brain-stroke-ct-dataset
+  URL     : <https://www.kaggle.com/datasets/ozguraslank/brain-stroke-ct-dataset>
   Licence : Community Data Licence Agreement — Permissive (CDLA-Permissive-1.0)
   Files used:
     12155.dcm  — normal brain case     → place in:  DICOM_N/12155.dcm
@@ -256,7 +282,6 @@ KEY FINDINGS
     DICOM_B_PATH = Path(r"C:\Users\USER\DICOM_B\10331.dcm")   # ← edit this
 
   Update these two lines to match your local directory structure.
-
 
 ────────────────────────────────────────────────────────────────────────────────
  REPRODUCIBILITY
@@ -280,7 +305,6 @@ KEY FINDINGS
   (ASTRA) has been tested on Windows with Anaconda. Linux is supported by
   ASTRA; macOS support depends on the ASTRA build available on your platform.
 
-
 ────────────────────────────────────────────────────────────────────────────────
  EXPECTED OUTPUTS — KEY NUMBERS
 ────────────────────────────────────────────────────────────────────────────────
@@ -291,16 +315,29 @@ KEY FINDINGS
     IRT (unfiltered)   : 0.142
     FBP / ramp         : 0.486
     FBP / Shepp-Logan  : 0.580
-    FBP / cosine       : 0.761      ← best analytic filter
-    SART (iterative)   : 0.895 *    ← highest overall
+    FBP / cosine       : 0.761      ← best analytic filter on SSIM
+    SART (iterative)   : 0.895 *    ← highest overall on SSIM
 
-  D* (crossover threshold) : 100%  under both parallel-beam and fan-beam
+  PSNR (dB) at full dose (100%), parallel-beam:
+    FBP / ramp         : 28.42      ← highest overall on PSNR
+    FBP / Shepp-Logan  : 28.32
+    FBP / cosine       : 27.51      ← best analytic filter on SSIM, but not on PSNR
+    SART (iterative)   : 24.70      ← lower than all FBP variants on PSNR at this dose
+
+  SSIM-based crossover: NONE identified across the tested range (1-100%
+  dose). SART leads FBP/cosine on SSIM at every dose level tested.
+
+  PSNR/MSE-based crossover: identified BETWEEN 25% and 10% dose.
+    FBP/cosine leads SART on PSNR at 100-25% dose;
+    SART leads FBP/cosine on PSNR at 10% and 1% dose.
+  This metric-dependent crossover is a central finding of the manuscript
+  (see Section 4.2, Tables 2b-2c).
 
   Δ-SSIM (SART vs FBP/cosine):
     Parallel-beam : 0.134 (full dose) → 0.419 (10% dose)
     Fan-beam      : 0.309 (full dose) → 0.188 (10% dose)
 
-  DICOM validation:
+  DICOM application (illustrative, not clinical validation):
     Normal brain (12155.dcm) : 16/16 HU checks passed
     ICH case     (10331.dcm) : 16/16 HU checks passed
     Combined                 : 32/32 passed
@@ -310,7 +347,6 @@ KEY FINDINGS
     FBP / cosine  : 0.375
     SART          : 0.684
 
-
 ────────────────────────────────────────────────────────────────────────────────
  CITATION
 ────────────────────────────────────────────────────────────────────────────────
@@ -318,17 +354,17 @@ KEY FINDINGS
   If you use this code or pipeline in your research, please cite:
 
   [Author Name] (2026) "Filter selection versus iterative reconstruction in CT:
-  a noise-dose benchmark using open-source Python and clinical DICOM validation."
-  Physica Medica — European Journal of Medical Physics. [DOI to be added upon
-  acceptance]
+  an open-source Python benchmark of noise-dose trade-offs with illustrative
+  clinical DICOM examples." Biomedical Physics & Engineering Express.
+  [DOI to be added upon acceptance]
 
   BibTeX:
     @article{author2026ct,
       author  = {[Author Name]},
       title   = {Filter selection versus iterative reconstruction in {CT}:
-                 a noise-dose benchmark using open-source {Python} and
-                 clinical {DICOM} validation},
-      journal = {Physica Medica},
+                 an open-source {Python} benchmark of noise-dose trade-offs
+                 with illustrative clinical {DICOM} examples},
+      journal = {Biomedical Physics \& Engineering Express},
       year    = {2026},
       note    = {DOI to be added upon acceptance}
     }
@@ -344,7 +380,6 @@ KEY FINDINGS
     IEEE Transactions on Image Processing, 13(4), 600–612.
     DOI: 10.1109/TIP.2003.819861
 
-
 ────────────────────────────────────────────────────────────────────────────────
  LICENCE
 ────────────────────────────────────────────────────────────────────────────────
@@ -355,17 +390,14 @@ KEY FINDINGS
   Data Licence Agreement — Permissive (CDLA-Permissive-1.0). It is NOT included
   in this repository. Users must download it independently from Kaggle.
 
-
 ────────────────────────────────────────────────────────────────────────────────
  CONTACT
 ────────────────────────────────────────────────────────────────────────────────
  Dr. Arijit Roy
- ORCiD: https://orcid.org/0000-0002-9618-6641
+ ORCiD: <https://orcid.org/0000-0002-9618-6641>
  email: arijitroy@live.com
 
-
-  GitHub repository: https://github.com/code-depository/CT-Reconstruction-Benchmark
-
+  GitHub repository: <https://github.com/code-depository/CT-Reconstruction-Benchmark>
 
   Bug reports and questions: please open a GitHub Issue.
 

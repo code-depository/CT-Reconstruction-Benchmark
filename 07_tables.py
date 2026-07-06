@@ -232,6 +232,97 @@ print()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# TABLE 2B / 2C — PSNR and MSE across all six dose levels
+# ═══════════════════════════════════════════════════════════════════════════════
+# Table 2 above reports PSNR only at 100% dose. metrics_summary.csv already
+# contains PSNR_mean/PSNR_sd and MSE_mean/MSE_sd for all (algo, dose) cells —
+# no new experiments are needed, this just surfaces data already computed by
+# 04_metrics.py. Added in response to reviewer requests for metrics beyond
+# SSIM at a single dose level.
+
+print("Table 2b/2c — PSNR and MSE across all six dose levels …")
+
+# Combined CSV: one row per algorithm, PSNR and MSE columns for every dose
+t2ext_csv_path = TABLES_DIR / "table2_extended_all_doses.csv"
+with open(t2ext_csv_path, "w", newline="") as f:
+    w = csv.writer(f)
+    header = ["Algorithm"]
+    for d in DOSE_LEVELS:
+        header += [f"PSNR {d}% (dB)", f"MSE {d}%"]
+    w.writerow(header)
+    for algo in ALGO_KEYS:
+        row = [ALGO_LABELS[algo]]
+        for d in DOSE_LEVELS:
+            s = summary[(algo, d)]
+            psnr_str = f"{float(s['PSNR_mean']):.2f} ± {float(s['PSNR_sd']):.3f}"
+            mse_str  = f"{float(s['MSE_mean']):.5f} ± {float(s['MSE_sd']):.6f}"
+            row += [psnr_str, mse_str]
+        w.writerow(row)
+print(f"  Saved → {t2ext_csv_path}")
+
+# LaTeX — PSNR table
+t2b_header = [r"\textbf{Algorithm}"] + \
+             [r"\textbf{" + f"{d}\\%" + "}" for d in DOSE_LEVELS]
+t2b_rows = []
+for algo in ALGO_KEYS:
+    row = [ALGO_LABELS[algo]]
+    for d in DOSE_LEVELS:
+        s = summary[(algo, d)]
+        row.append(f"{float(s['PSNR_mean']):.2f} $\\pm$ {float(s['PSNR_sd']):.3f}")
+    t2b_rows.append(row)
+t2b_tex = latex_table(
+    caption=("PSNR (dB, mean $\\pm$ SD, $n=5$) for five reconstruction "
+             "algorithms across six simulated dose levels."),
+    label="tab:psnr_all_doses",
+    header_row=t2b_header,
+    data_rows=t2b_rows,
+    col_format="l" + "r" * len(DOSE_LEVELS),
+)
+(TABLES_DIR / "table2b_psnr_all_doses.tex").write_text(t2b_tex)
+print(f"  Saved → {TABLES_DIR / 'table2b_psnr_all_doses.tex'}")
+
+# LaTeX — MSE table
+t2c_header = [r"\textbf{Algorithm}"] + \
+             [r"\textbf{" + f"{d}\\%" + "}" for d in DOSE_LEVELS]
+t2c_rows = []
+for algo in ALGO_KEYS:
+    row = [ALGO_LABELS[algo]]
+    for d in DOSE_LEVELS:
+        s = summary[(algo, d)]
+        row.append(f"{float(s['MSE_mean']):.5f}")
+    t2c_rows.append(row)
+t2c_tex = latex_table(
+    caption=("MSE (mean, $n=5$) for five reconstruction algorithms across "
+             "six simulated dose levels. SD omitted for brevity; see CSV "
+             "for full values."),
+    label="tab:mse_all_doses",
+    header_row=t2c_header,
+    data_rows=t2c_rows,
+    col_format="l" + "r" * len(DOSE_LEVELS),
+)
+(TABLES_DIR / "table2c_mse_all_doses.tex").write_text(t2c_tex)
+print(f"  Saved → {TABLES_DIR / 'table2c_mse_all_doses.tex'}")
+
+# Print to terminal
+print(f"\n  PSNR (dB) — rows=algorithms, columns=dose:")
+print(f"  {'Algorithm':20}" + "".join(f"  {d:>7}%" for d in DOSE_LEVELS))
+for algo in ALGO_KEYS:
+    row_str = f"  {ALGO_LABELS[algo]:20}"
+    for d in DOSE_LEVELS:
+        row_str += f"  {float(summary[(algo, d)]['PSNR_mean']):>8.2f}"
+    print(row_str)
+
+print(f"\n  MSE — rows=algorithms, columns=dose:")
+print(f"  {'Algorithm':20}" + "".join(f"  {d:>9}%" for d in DOSE_LEVELS))
+for algo in ALGO_KEYS:
+    row_str = f"  {ALGO_LABELS[algo]:20}"
+    for d in DOSE_LEVELS:
+        row_str += f"  {float(summary[(algo, d)]['MSE_mean']):>10.5f}"
+    print(row_str)
+print()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # TABLE 3 — DICOM HU validation (two cases: normal + bleeding)
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -368,6 +459,9 @@ print("  figures/figure2_ssim_vs_dose.png")
 print("  figures/figure3_dicom_validation.png")
 print("  tables/table1_ssim_matrix.tex  (.csv)")
 print("  tables/table2_full_dose.tex    (.csv)")
+print("  tables/table2_extended_all_doses.csv")
+print("  tables/table2b_psnr_all_doses.tex")
+print("  tables/table2c_mse_all_doses.tex")
 print("  tables/table3_hu_validation.tex (.csv)")
 
 print("\nCentral results for abstract:")

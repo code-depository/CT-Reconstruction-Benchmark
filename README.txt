@@ -4,9 +4,7 @@
   illustrative clinical DICOM examples
 ================================================================================
 
-  Dr. Arijit Roy
-  ORCiD: <https://orcid.org/0000-0002-9618-6641>
-  email: arijitroy@live.com
+  Authors
 
   GitHub repository: <https://github.com/code-depository/CT-Reconstruction-Benchmark>
 
